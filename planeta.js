@@ -9,10 +9,23 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Crear una esfera (el planeta)
-const geometry = new THREE.SphereGeometry(5, 32, 32);
+const geometry = new THREE.SphereGeometry(3, 32, 32);
 const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Cambiado a color rojo
 const planet = new THREE.Mesh(geometry, material);
 scene.add(planet);
+
+// Crear un anillo (anillo geométrico)
+const ringGeometry = new THREE.RingGeometry(4, 5, 64); // Parámetros: radio interior, radio exterior, segmentos
+const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }); // Color blanco para el anillo
+const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+scene.add(ring);
+
+// Rotar el anillo para que esté a 75°
+ring.rotation.x = Math.PI / 180 * 75; // Convertir 75 grados a radianes y rotar en el eje x
+
+// Añadir el anillo como hijo del planeta para que rote junto con él
+planet.add(ring);
+
 
 // Posicionar la cámara
 camera.position.z = 9;
@@ -39,11 +52,12 @@ controls.maxDistance = 20; // Distancia máxima a la cámara
 const moonGeometry = new THREE.SphereGeometry(1, 32, 32);
 const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa }); // Color gris para la luna
 const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-scene.add(moon);
+const moon2 = new THREE.Mesh(moonGeometry, moonMaterial);
+scene.add(moon, moon2);
 
 // Posicionar la luna en órbita alrededor del planeta
-const orbitRadius = 10; // Radio de la órbita de la luna
-const moonOrbitSpeed = 0.02; // Velocidad de la órbita de la luna
+const orbitRadius = 6; // Radio de la órbita de la luna
+const moonOrbitSpeed = 0.80; // Velocidad de la órbita de la luna
 
 // Animar la órbita de la luna
 function animateMoonOrbit() {
@@ -56,6 +70,7 @@ function animateMoonOrbit() {
   
   // Posicionar la luna
   moon.position.set(x, 0, z);
+  moon2.position.set(z, 4, x);
 
   // Actualizar la posición de la cámara
   controls.update();
@@ -66,7 +81,6 @@ function animateMoonOrbit() {
 
 // Llamar a la función de animación de la órbita de la luna
 animateMoonOrbit();
-
 
 // Animación del planeta
 function animate() {
