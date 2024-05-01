@@ -17,7 +17,7 @@ scene.add(planet);
 
 // Crear un anillo (anillo geométrico)
 const ringGeometry = new THREE.RingGeometry(4, 5, 64); // Parámetros: radio interior, radio exterior, segmentos
-const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }); // Color blanco para el anillo
+const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide }); // Color blanco para el anillo
 const ring = new THREE.Mesh(ringGeometry, ringMaterial);
 scene.add(ring);
 
@@ -69,7 +69,7 @@ particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 // Crear el material de las estrellas
 const particleMaterial = new THREE.PointsMaterial({
     color: 0xffffff, // Color de las estrellas
-    size: 2, // Tamaño de las estrellas
+    size: 1, // Tamaño de las estrellas
 });
 
 // Crear el sistema de partículas
@@ -86,7 +86,7 @@ scene.add(moon, moon2);
 
 // Posicionar las lunas en órbita alrededor del planeta
 const orbitRadius = -6; // Radio de la órbita de la luna
-const moonOrbitSpeed = 0.80; // Velocidad de la órbita de la luna
+let moonOrbitSpeed = 0.80; // Velocidad de la órbita de la luna
 
 // Animar la órbita de las lunas
 function animateMoonOrbit() {
@@ -108,8 +108,78 @@ function animateMoonOrbit() {
   renderer.render(scene, camera);
 }
 
+
+
 // Llamar a la función de animación de la órbita de la luna
 animateMoonOrbit();
+
+
+/* ESTO FUNCIONA CUANDO EL MOUSE PASA SOBRE LA LUNA
+// Agregar detector de eventos al renderizador
+renderer.domElement.addEventListener('mousemove', onMouseMove);
+
+// Función para manejar el movimiento del mouse
+function onMouseMove(event) {
+  // Normalizar las coordenadas del mouse (-1 to +1)
+  const mouse = new THREE.Vector2();
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // Configurar un rayo desde la posición de la cámara
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, camera);
+
+  // Verificar intersecciones con la luna
+  const intersectsMoon = raycaster.intersectObject(moon);
+  //Para la Luna2
+  const intersectsMoon2 = raycaster.intersectObject(moon2);
+
+  // Si el mouse está sobre alguna de las lunas
+  if (intersectsMoon.length > 0 || intersectsMoon2.length > 0) {
+  // Detener la animación de ambas lunas
+  moonOrbitSpeed = 0; 
+
+     // Mostrar el cartelito
+    document.getElementById("popup").style.display = "block";
+  } else {
+    // Si el mouse no está sobre ninguna luna, continuar la animación
+    moonOrbitSpeed = 0.80;
+
+    // Ocultar el cartelito
+    document.getElementById("popup").style.display = "none";
+  }
+}
+*/
+/*ESTO FUNCIONA CUANDO SE HACE CLICK SOBRE LA LUNA*/
+// Agregar detector de eventos al renderizador
+renderer.domElement.addEventListener('click', onClick);
+
+// Función para manejar el clic del mouse
+function onClick(event) {
+    // Normalizar las coordenadas del mouse (-1 to +1)
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Configurar un rayo desde la posición de la cámara
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    // Verificar intersecciones con la luna
+    const intersectsMoon = raycaster.intersectObject(moon);
+    const intersectsMoon2 = raycaster.intersectObject(moon2);
+
+    // Si el mouse hace clic en alguna de las lunas
+    if (intersectsMoon.length > 0 || intersectsMoon2.length > 0) {
+        // Detener la animación de ambas lunas
+        moonOrbitSpeed = 0;
+
+        // Mostrar el cartelito
+        document.getElementById("popup").style.display = "block";
+    }
+}
+
+
 
 // Animación del planeta
 function animate() {
