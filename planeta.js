@@ -161,8 +161,8 @@ function onMouseMove(event) {
     document.getElementById("popup").style.display = "none";
   }
 }
-*/
-/*ESTO FUNCIONA CUANDO SE HACE CLICK SOBRE LA LUNA*/
+
+/*ESTO FUNCIONA CUANDO SE HACE CLICK SOBRE LA LUNA
 // Agregar detector de eventos al renderizador
 renderer.domElement.addEventListener('click', onClick);
 
@@ -191,7 +191,7 @@ function onClick(event) {
     }
 }
 
-
+*/
 
 // Animación del planeta
 function animate() {
