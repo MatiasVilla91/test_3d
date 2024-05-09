@@ -8,24 +8,32 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Cargar la textura
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load('1366_2000.jpg');
+
 // Crear una esfera (el planeta)
 const geometry = new THREE.SphereGeometry(3, 32, 32);
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Cambiado a color rojo
+const material = new THREE.MeshBasicMaterial({ map: texture }); // Usar 'map' en lugar de 'texture'
 const planet = new THREE.Mesh(geometry, material);
 scene.add(planet);
 
+// Cargar la textura para el anillo
+//const ringTexture = new THREE.TextureLoader().load('anilloColor.jpg');
+
+// Crear el material con la textura
+//const ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, side: THREE.DoubleSide });
 
 // Crear un anillo (anillo geométrico)
-const ringGeometry = new THREE.RingGeometry(4, 5, 64); // Parámetros: radio interior, radio exterior, segmentos
-const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide }); // Color blanco para el anillo
-const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-scene.add(ring);
+//const ringGeometry = new THREE.RingGeometry(4, 5, 64); // Parámetros: radio interior, radio exterior, segmentos
+//const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+//scene.add(ring);
 
 // Rotar el anillo para que esté a 75°
-ring.rotation.x = Math.PI / 180 * 75; // Convertir 75 grados a radianes y rotar en el eje x
+//ring.rotation.x = Math.PI / 180 * 75; // Convertir 75 grados a radianes y rotar en el eje x
 
 // Añadir el anillo como hijo del planeta para que rote junto con él
-planet.add(ring);
+//planet.add(ring);
 
 // Posicionar la cámara
 camera.position.z = 9;
@@ -39,13 +47,13 @@ controls.dampingFactor = 0.25; // Factor de suavizado (0 = sin suavizado, 1 = m�
 controls.rotateSpeed = 0.35; // Velocidad de rotación de la cámara
 
 // Detener el control de rotación automática
-controls.autoRotate = false;
+//controls.autoRotate = false;
 
 // Limitar el ángulo de inclinación vertical de la cámara
 controls.maxPolarAngle = Math.PI / 2; // 90 grados
 
 // Limitar la distancia mínima y máxima de la cámara
-controls.minDistance = 5; // Distancia mínima a la cámara
+controls.minDistance = 4; // Distancia mínima a la cámara
 controls.maxDistance = 20; // Distancia máxima a la cámara
 
 // Crear la geometría de las estrellas
@@ -77,9 +85,13 @@ const particleSystem = new THREE.Points(particles, particleMaterial);
 scene.add(particleSystem);
 
 
-// Crear lunas
+
+// Cargar la textura para las lunas
+const moonTexture = new THREE.TextureLoader().load('textura2.png');
+// Crear el material con la textura
+const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
+// Crear las lunas con la nueva textura
 const moonGeometry = new THREE.SphereGeometry(1, 32, 32);
-const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa }); // Color gris para la luna
 const moon = new THREE.Mesh(moonGeometry, moonMaterial);
 const moon2 = new THREE.Mesh(moonGeometry, moonMaterial);
 scene.add(moon, moon2);
