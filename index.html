@@ -1,33 +1,132 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-NHFP05RXNR"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-NHFP05RXNR');
-</script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   
-   
-    
-    <title>Planeta Three JS</title>
-    <style>
-        body { margin: 0; }
-        canvas { display: block; }
-    </style>
-    <link rel="stylesheet" href="style.css"> <!-- Vincular el archivo CSS -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHFP05RXNR"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NHFP05RXNR');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sismógrafo Global</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  
-    <script src="planeta.js" type="module"></script>
-    
+
+  <!-- HUD overlay -->
+  <div id="hud">
+    <div class="hud-corner tl"></div>
+    <div class="hud-corner tr"></div>
+    <div class="hud-corner bl"></div>
+    <div class="hud-corner br"></div>
+    <div id="hud-readout">SEISMIC ARRAY · USGS · OPEN-METEO · EN LÍNEA</div>
+  </div>
+
+  <!-- Panel de control -->
+  <div id="panel">
+    <div id="panel-header">
+      <span id="panel-title">Seismic Array</span>
+      <button id="panel-toggle" title="Ocultar panel">✕</button>
+    </div>
+
+    <div id="panel-body">
+
+      <div class="control-group">
+        <label>Magnitud mínima <strong id="mag-val">2.5</strong></label>
+        <input type="range" id="mag-min" min="0" max="9" step="0.5" value="2.5">
+        <div class="range-labels"><span>0</span><span>9</span></div>
+      </div>
+
+      <div class="control-group">
+        <label>Período</label>
+        <div class="btn-group">
+          <button class="period-btn" data-days="1">24 h</button>
+          <button class="period-btn active" data-days="7">7 días</button>
+          <button class="period-btn" data-days="30">30 días</button>
+          <button class="period-btn" data-days="custom">Personalizado</button>
         </div>
       </div>
-      
+
+      <div class="control-group" id="custom-dates">
+        <label>Desde</label>
+        <input type="date" id="date-from">
+        <label>Hasta</label>
+        <input type="date" id="date-to">
+      </div>
+
+      <button id="apply-btn">Buscar sismos</button>
+
+      <div id="stats">
+        <div id="loading-msg">Cargando...</div>
+        <div id="count-msg"><span id="count">0</span> sismos encontrados</div>
+      </div>
+
+      <hr>
+
+      <div class="control-group">
+        <label>Alertas en tiempo real</label>
+        <div class="alert-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="alert-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Avisar si M ≥</span>
+          <input type="number" id="alert-mag" value="5" min="1" max="9" step="0.5">
+        </div>
+        <small id="alert-status">Inactivo</small>
+      </div>
+
+      <hr>
+
+      <div class="control-group">
+        <label>Vientos globales</label>
+        <div class="alert-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="wind-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <small id="wind-status">Inactivo</small>
+        </div>
+        <div id="wind-legend">
+          <div class="leyenda-item"><span class="dot" style="background:#44ddff"></span> &lt; 5 m/s</div>
+          <div class="leyenda-item"><span class="dot" style="background:#88ffaa"></span> 5 – 10 m/s</div>
+          <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> 10 – 20 m/s</div>
+          <div class="leyenda-item"><span class="dot" style="background:#ff6600"></span> 20 – 30 m/s</div>
+          <div class="leyenda-item"><span class="dot" style="background:#ff2222"></span> &gt; 30 m/s</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Botón abrir panel -->
+  <button id="panel-open" title="Abrir panel">☰</button>
+
+  <!-- Notificación de alerta -->
+  <div id="alert-notif">
+    <div id="alert-content">
+      <strong id="alert-title"></strong>
+      <p id="alert-body"></p>
+    </div>
+    <button id="alert-close">✕</button>
+  </div>
+
+  <!-- Leyenda -->
+  <div id="leyenda">
+    <div class="leyenda-titulo">Magnitud</div>
+    <div class="leyenda-item"><span class="dot" style="background:#00ff88"></span> &lt; 2.5</div>
+    <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> 2.5 – 4.5</div>
+    <div class="leyenda-item"><span class="dot" style="background:#ff6600"></span> 4.5 – 6.0</div>
+    <div class="leyenda-item"><span class="dot" style="background:#ff1111"></span> &gt; 6.0</div>
+    <div class="leyenda-footer">Fuente: USGS · Hover para info</div>
+  </div>
+
+  <!-- Tooltip terremoto -->
+  <div id="eq-info"></div>
+
+  <script src="planeta.js" type="module"></script>
+
 </body>
 </html>
