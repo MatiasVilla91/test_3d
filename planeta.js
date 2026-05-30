@@ -71,15 +71,28 @@ controls.enablePan      = false;
 // ── Helpers de coordenadas ──
 const RADIO = 3;
 
-function latLngAVec3(lat, lng) {
+function latLngAVec3(lat, lng, r = RADIO + 0.06) {
   const phi   = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
-  const r = RADIO + 0.06;
   return new THREE.Vector3(
     -r * Math.sin(phi) * Math.cos(theta),
      r * Math.cos(phi),
      r * Math.sin(phi) * Math.sin(theta)
   );
+}
+
+// ── Graticule (grilla radar) ──
+const gratMat    = new THREE.LineBasicMaterial({ color: 0x00ff44, transparent: true, opacity: 0.11 });
+const ecuadorMat = new THREE.LineBasicMaterial({ color: 0x00ffaa, transparent: true, opacity: 0.55 });
+for (let lat = -60; lat <= 60; lat += 30) {
+  const pts = [];
+  for (let lng = 0; lng <= 360; lng += 3) pts.push(latLngAVec3(lat, lng, RADIO + 0.02));
+  planet.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lat === 0 ? ecuadorMat : gratMat));
+}
+for (let lng = 0; lng < 360; lng += 30) {
+  const pts = [];
+  for (let lat = -90; lat <= 90; lat += 3) pts.push(latLngAVec3(lat, lng, RADIO + 0.02));
+  planet.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gratMat));
 }
 
 function colorPorMagnitud(mag) {
