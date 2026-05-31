@@ -9,6 +9,18 @@ body {
 
 canvas { display: block; }
 
+#cesiumContainer {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+
+/* Ocultar UI interna de Cesium */
+.cesium-widget-credits,
+.cesium-credit-container,
+.cesium-viewer-toolbar { display: none !important; }
+
 /* ── Scanlines ── */
 body::after {
   content: '';
@@ -128,6 +140,30 @@ body::after {
 }
 #panel-open:hover { color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 68, 0.2); }
 #panel.hidden ~ #panel-open { display: block; }
+
+#bottom-controls {
+  position: fixed;
+  bottom: 60px; left: 50%; transform: translateX(-50%);
+  z-index: 99;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+}
+#bottom-controls button {
+  background: rgba(0, 6, 2, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 255, 68, 0.25);
+  color: #00aa55;
+  cursor: pointer;
+  width: 38px; height: 38px;
+  border-radius: 1px;
+  font-size: 18px;
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+  transition: all 0.15s;
+}
+#bottom-controls button:hover { color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 68, 0.2); }
 
 #panel-body {
   padding: 16px;
@@ -286,6 +322,28 @@ hr { border: none; border-top: 1px solid rgba(0, 255, 68, 0.07); }
 #wind-legend  { display: none; margin-top: 6px; }
 #wind-legend .leyenda-item { margin-bottom: 3px; }
 
+#risk-status  { font-size: 10px; color: #004422; letter-spacing: 0.5px; }
+#risk-legend  { display: none; margin-top: 6px; }
+#risk-legend .leyenda-item { margin-bottom: 3px; }
+
+#risk-top-zones { display: none; margin-top: 8px; }
+.risk-zone-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(0, 255, 68, 0.05);
+  letter-spacing: 0.5px;
+}
+.risk-disclaimer {
+  font-size: 8px;
+  color: #003322;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+  line-height: 1.5;
+  display: block;
+}
+
 /* ── Notificación de alerta ── */
 @keyframes slideIn {
   from { transform: translateX(16px); opacity: 0; }
@@ -384,6 +442,26 @@ hr { border: none; border-top: 1px solid rgba(0, 255, 68, 0.07); }
   z-index: 50;
   letter-spacing: 0.3px;
 }
+
+/* ── Atribución de tiles ── */
+#map-attr {
+  position: fixed;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: #003322;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  z-index: 90;
+  white-space: nowrap;
+}
+#map-attr a {
+  color: #004433;
+  text-decoration: none;
+  pointer-events: all;
+}
+#map-attr a:hover { color: #00ff88; }
 
 /* ── Scrollbar ── */
 #panel::-webkit-scrollbar { width: 3px; }

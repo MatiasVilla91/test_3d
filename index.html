@@ -12,8 +12,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sismógrafo Global</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.120.0/Build/Cesium/Widgets/widgets.css">
 </head>
 <body>
+
+  <div id="cesiumContainer"></div>
 
   <!-- HUD overlay -->
   <div id="hud">
@@ -98,11 +101,40 @@
         </div>
       </div>
 
+      <hr>
+
+      <div class="control-group">
+        <label>Riesgo sísmico · IA</label>
+        <div class="alert-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="risk-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <small id="risk-status">Inactivo</small>
+        </div>
+        <div id="risk-legend">
+          <div class="leyenda-item"><span class="dot" style="background:#003311"></span> Bajo &lt; 15%</div>
+          <div class="leyenda-item"><span class="dot" style="background:#66cc00"></span> Leve 15–30%</div>
+          <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> Moderado 30–50%</div>
+          <div class="leyenda-item"><span class="dot" style="background:#ff7700"></span> Alto 50–70%</div>
+          <div class="leyenda-item"><span class="dot" style="background:#ff1111"></span> Crítico &gt; 70%</div>
+        </div>
+        <div id="risk-top-zones"></div>
+        <small class="risk-disclaimer">P(M≥5.0 próximos 7 días) · estimación probabilística</small>
+      </div>
+
     </div>
   </div>
 
   <!-- Botón abrir panel -->
   <button id="panel-open" title="Abrir panel">☰</button>
+
+  <!-- Controles inferiores: zoom + pausa -->
+  <div id="bottom-controls">
+    <button id="zoom-out" title="Alejar">−</button>
+    <button id="pause-btn" title="Pausar rotación">⏸</button>
+    <button id="zoom-in"  title="Acercar">+</button>
+  </div>
 
   <!-- Notificación de alerta -->
   <div id="alert-notif">
@@ -126,7 +158,16 @@
   <!-- Tooltip terremoto -->
   <div id="eq-info"></div>
 
-  <script src="planeta.js" type="module"></script>
+  <!-- Atribución de tiles -->
+  <div id="map-attr">
+    &copy; <a href="https://www.esri.com" target="_blank">Esri</a>
+    &nbsp;&middot;&nbsp; Earthstar Geographics
+    &nbsp;&middot;&nbsp; <a href="https://cesium.com" target="_blank">CesiumJS</a>
+  </div>
+
+  <script>window.CESIUM_BASE_URL = 'https://unpkg.com/cesium@1.120.0/Build/Cesium/';</script>
+  <script src="https://unpkg.com/cesium@1.120.0/Build/Cesium/Cesium.js"></script>
+  <script src="planeta.js"></script>
 
 </body>
 </html>
