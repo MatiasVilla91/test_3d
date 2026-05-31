@@ -1,0 +1,43 @@
+name: Actualizar predicciones sísmicas
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Cada lunes a las 6:00 UTC
+  workflow_dispatch:        # También se puede ejecutar manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache USGS data
+        uses: actions/cache@v4
+        with:
+          path: usgs_cache.csv
+          key: usgs-cache-${{ runner.os }}-${{ steps.date.outputs.week }}
+          restore-keys: usgs-cache-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: pip install -r requirements_seismic.txt
+
+      - name: Correr modelo
+        run: python train_seismic_model.py
+
+      - name: Commit y push si hay cambios
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seismic_predictions.json usgs_cache.csv
+          git diff --staged --quiet || git commit -m "chore: actualizar predicciones sísmicas [$(date -u '+%Y-%m-%d')]"
+          git push

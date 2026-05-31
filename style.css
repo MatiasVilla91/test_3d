@@ -469,40 +469,90 @@ hr { border: none; border-top: 1px solid rgba(0, 255, 68, 0.07); }
 #panel::-webkit-scrollbar-thumb { background: #003311; }
 #panel::-webkit-scrollbar-thumb:hover { background: #006622; }
 
+/* ── Acordeón ── */
+details { border-top: 1px solid rgba(0,255,68,0.12); }
+details:first-child { border-top: none; }
+details summary {
+  padding: 12px 0 10px;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #00ff88;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::after {
+  content: '▸';
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+details[open] summary::after { transform: rotate(90deg); }
+details > .control-group,
+details > button,
+details > #stats { margin-top: 4px; }
+
 /* ── Mobile ── */
 @media (max-width: 640px) {
   #panel {
     width: 100%;
     height: auto;
-    max-height: 65vh;
+    max-height: 72vh;
     top: auto; bottom: 0; left: 0;
     border-right: none;
-    border-top: 1px solid rgba(0, 255, 68, 0.15);
+    border-top: 1px solid rgba(0, 255, 68, 0.2);
     overflow-y: auto;
     transform: translateY(0);
+    border-radius: 8px 8px 0 0;
   }
   #panel.hidden { transform: translateY(100%); }
 
   .hud-corner.tl, .hud-corner.bl { left: 14px; }
 
-  #panel-open {
-    display: block;
-    top: auto; bottom: 16px; left: 50%;
-    transform: translateX(-50%);
+  /* Ocultar el panel-open original en mobile — lo reemplaza panel-btn-mob */
+  #panel-open { display: none !important; }
+  #panel.hidden ~ #panel-open { display: none !important; }
+
+  /* Mostrar el ☰ en el bottom-controls solo en mobile */
+  #panel-btn-mob { display: flex !important; }
+
+  /* Bottom controls más grandes para touch */
+  #bottom-controls {
+    bottom: 20px;
+    gap: 8px;
   }
-  #panel.hidden ~ #panel-open {
-    display: block;
-    transform: translateX(-50%);
+  #bottom-controls button {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
   }
 
   #leyenda { display: none; }
 
+  /* Tooltip fijo abajo en mobile (no hay cursor) */
   #eq-info {
     left: 50% !important;
     top: auto !important;
-    bottom: 16px;
+    bottom: 90px;
     transform: translateX(-50%);
     width: 90vw;
-    max-width: 340px;
+    max-width: 360px;
   }
+
+  /* Panel body más espaciado para touch */
+  #panel-body { padding: 12px 16px 24px; gap: 0; }
+  details summary { padding: 14px 0; font-size: 11px; }
+
+  .toggle-switch { width: 42px; height: 24px; }
+  .toggle-slider::before { width: 18px; height: 18px; }
+  input[type="range"] { height: 36px; }
+  .btn-group button, #apply-btn { min-height: 40px; }
+}
+
+/* En desktop, ocultar el botón ☰ del bottom-controls */
+@media (min-width: 641px) {
+  #panel-btn-mob { display: none; }
 }

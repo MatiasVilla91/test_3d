@@ -36,92 +36,91 @@
 
     <div id="panel-body">
 
-      <div class="control-group">
-        <label>Magnitud mínima <strong id="mag-val">2.5</strong></label>
-        <input type="range" id="mag-min" min="0" max="9" step="0.5" value="2.5">
-        <div class="range-labels"><span>0</span><span>9</span></div>
-      </div>
-
-      <div class="control-group">
-        <label>Período</label>
-        <div class="btn-group">
-          <button class="period-btn" data-days="1">24 h</button>
-          <button class="period-btn active" data-days="7">7 días</button>
-          <button class="period-btn" data-days="30">30 días</button>
-          <button class="period-btn" data-days="custom">Personalizado</button>
+      <details open>
+        <summary>Sismos</summary>
+        <div class="control-group">
+          <label>Magnitud mínima <strong id="mag-val">2.5</strong></label>
+          <input type="range" id="mag-min" min="0" max="9" step="0.5" value="2.5">
+          <div class="range-labels"><span>0</span><span>9</span></div>
         </div>
-      </div>
-
-      <div class="control-group" id="custom-dates">
-        <label>Desde</label>
-        <input type="date" id="date-from">
-        <label>Hasta</label>
-        <input type="date" id="date-to">
-      </div>
-
-      <button id="apply-btn">Buscar sismos</button>
-
-      <div id="stats">
-        <div id="loading-msg">Cargando...</div>
-        <div id="count-msg"><span id="count">0</span> sismos encontrados</div>
-      </div>
-
-      <hr>
-
-      <div class="control-group">
-        <label>Alertas en tiempo real</label>
-        <div class="alert-row">
-          <label class="toggle-switch">
-            <input type="checkbox" id="alert-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-          <span>Avisar si M ≥</span>
-          <input type="number" id="alert-mag" value="5" min="1" max="9" step="0.5">
+        <div class="control-group">
+          <label>Período</label>
+          <div class="btn-group">
+            <button class="period-btn" data-days="1">24 h</button>
+            <button class="period-btn active" data-days="7">7 días</button>
+            <button class="period-btn" data-days="30">30 días</button>
+            <button class="period-btn" data-days="custom">Personalizado</button>
+          </div>
         </div>
-        <small id="alert-status">Inactivo</small>
-      </div>
-
-      <hr>
-
-      <div class="control-group">
-        <label>Vientos globales</label>
-        <div class="alert-row">
-          <label class="toggle-switch">
-            <input type="checkbox" id="wind-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-          <small id="wind-status">Inactivo</small>
+        <div class="control-group" id="custom-dates">
+          <label>Desde</label>
+          <input type="date" id="date-from">
+          <label>Hasta</label>
+          <input type="date" id="date-to">
         </div>
-        <div id="wind-legend">
-          <div class="leyenda-item"><span class="dot" style="background:#44ddff"></span> &lt; 5 m/s</div>
-          <div class="leyenda-item"><span class="dot" style="background:#88ffaa"></span> 5 – 10 m/s</div>
-          <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> 10 – 20 m/s</div>
-          <div class="leyenda-item"><span class="dot" style="background:#ff6600"></span> 20 – 30 m/s</div>
-          <div class="leyenda-item"><span class="dot" style="background:#ff2222"></span> &gt; 30 m/s</div>
+        <button id="apply-btn">Buscar sismos</button>
+        <div id="stats">
+          <div id="loading-msg">Cargando...</div>
+          <div id="count-msg"><span id="count">0</span> sismos encontrados</div>
         </div>
-      </div>
+      </details>
 
-      <hr>
+      <details>
+        <summary>Alertas en tiempo real</summary>
+        <div class="control-group">
+          <div class="alert-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="alert-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <span>Avisar si M ≥</span>
+            <input type="number" id="alert-mag" value="5" min="1" max="9" step="0.5">
+          </div>
+          <small id="alert-status">Inactivo</small>
+        </div>
+      </details>
 
-      <div class="control-group">
-        <label>Riesgo sísmico · IA</label>
-        <div class="alert-row">
-          <label class="toggle-switch">
-            <input type="checkbox" id="risk-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-          <small id="risk-status">Inactivo</small>
+      <details>
+        <summary>Vientos globales</summary>
+        <div class="control-group">
+          <div class="alert-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="wind-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <small id="wind-status">Inactivo</small>
+          </div>
+          <div id="wind-legend">
+            <div class="leyenda-item"><span class="dot" style="background:#44ddff"></span> &lt; 5 m/s</div>
+            <div class="leyenda-item"><span class="dot" style="background:#88ffaa"></span> 5 – 10 m/s</div>
+            <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> 10 – 20 m/s</div>
+            <div class="leyenda-item"><span class="dot" style="background:#ff6600"></span> 20 – 30 m/s</div>
+            <div class="leyenda-item"><span class="dot" style="background:#ff2222"></span> &gt; 30 m/s</div>
+          </div>
         </div>
-        <div id="risk-legend">
-          <div class="leyenda-item"><span class="dot" style="background:#003311"></span> Bajo &lt; 15%</div>
-          <div class="leyenda-item"><span class="dot" style="background:#66cc00"></span> Leve 15–30%</div>
-          <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> Moderado 30–50%</div>
-          <div class="leyenda-item"><span class="dot" style="background:#ff7700"></span> Alto 50–70%</div>
-          <div class="leyenda-item"><span class="dot" style="background:#ff1111"></span> Crítico &gt; 70%</div>
+      </details>
+
+      <details>
+        <summary>Riesgo sísmico · IA</summary>
+        <div class="control-group">
+          <div class="alert-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="risk-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <small id="risk-status">Inactivo</small>
+          </div>
+          <div id="risk-legend">
+            <div class="leyenda-item"><span class="dot" style="background:#003311"></span> Bajo &lt; 15%</div>
+            <div class="leyenda-item"><span class="dot" style="background:#66cc00"></span> Leve 15–30%</div>
+            <div class="leyenda-item"><span class="dot" style="background:#ffdd00"></span> Moderado 30–50%</div>
+            <div class="leyenda-item"><span class="dot" style="background:#ff7700"></span> Alto 50–70%</div>
+            <div class="leyenda-item"><span class="dot" style="background:#ff1111"></span> Crítico &gt; 70%</div>
+          </div>
+          <div id="risk-top-zones"></div>
+          <small class="risk-disclaimer">P(M≥5.0 próximos 7 días) · estimación probabilística</small>
         </div>
-        <div id="risk-top-zones"></div>
-        <small class="risk-disclaimer">P(M≥5.0 próximos 7 días) · estimación probabilística</small>
-      </div>
+      </details>
 
     </div>
   </div>
@@ -129,11 +128,12 @@
   <!-- Botón abrir panel -->
   <button id="panel-open" title="Abrir panel">☰</button>
 
-  <!-- Controles inferiores: zoom + pausa -->
+  <!-- Controles inferiores: zoom + pausa + panel (mobile) -->
   <div id="bottom-controls">
-    <button id="zoom-out" title="Alejar">−</button>
-    <button id="pause-btn" title="Pausar rotación">⏸</button>
-    <button id="zoom-in"  title="Acercar">+</button>
+    <button id="zoom-out"       title="Alejar">−</button>
+    <button id="pause-btn"      title="Pausar rotación">⏸</button>
+    <button id="zoom-in"        title="Acercar">+</button>
+    <button id="panel-btn-mob"  title="Panel">☰</button>
   </div>
 
   <!-- Notificación de alerta -->

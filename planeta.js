@@ -273,9 +273,40 @@ handler.setInputAction((movement) => {
   }
 }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-viewer.scene.canvas.addEventListener('touchstart', () => {
-  infoEl.style.display = 'none';
-}, { passive: true });
+// Tap en mobile: misma lógica que hover pero con LEFT_CLICK
+const tapHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+tapHandler.setInputAction((click) => {
+  const picked = viewer.scene.pick(click.position);
+  const x = Math.min(click.position.x + 16, window.innerWidth  - 220);
+  const y = Math.max(click.position.y - 16, 10);
+
+  if (Cesium.defined(picked) && picked.id && picked.id.mag !== undefined) {
+    const { mag, lugar, fecha, profundidad } = picked.id;
+    infoEl.innerHTML     = `<strong>M${mag}</strong> — ${lugar}<br><small>${fecha} · Prof: ${profundidad}</small>`;
+    infoEl.style.display = 'block';
+    infoEl.style.left    = x + 'px';
+    infoEl.style.top     = y + 'px';
+  } else if (Cesium.defined(picked) && picked.id && picked.id._risk) {
+    const { lat, lng, risk, count, maxMag } = picked.id._risk;
+    const pct   = (risk * 100).toFixed(0);
+    const latS  = `${Math.abs(lat).toFixed(1)}°${lat >= 0 ? 'N' : 'S'}`;
+    const lngS  = `${Math.abs(lng).toFixed(1)}°${lng >= 0 ? 'E' : 'O'}`;
+    const nivel = risk < 0.5 ? 'Moderado' : risk < 0.7 ? 'Alto' : 'Crítico';
+    const sismos = count !== '—' ? `${count} sismos · ` : '';
+    const mmax   = maxMag !== '—' ? `M${(+maxMag).toFixed(1)}` : '—';
+    infoEl.innerHTML = `<strong>${nivel} · ${pct}%</strong> — …`
+      + `<br><small>${latS} ${lngS} · ${sismos}Mag. máx: ${mmax}</small>`;
+    infoEl.style.display = 'block';
+    infoEl.style.left    = x + 'px';
+    infoEl.style.top     = y + 'px';
+    getLocationName(lat, lng).then(loc => {
+      if (infoEl.style.display === 'block')
+        infoEl.innerHTML = infoEl.innerHTML.replace('…', loc);
+    });
+  } else {
+    infoEl.style.display = 'none';
+  }
+}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
 // ── Vientos ───────────────────────────────────────────────────────────────────
 const WIND_GRID = (() => {
@@ -511,12 +542,10 @@ pauseBtn.addEventListener('click', () => {
 });
 
 // ── Controles del panel ───────────────────────────────────────────────────────
-document.getElementById('panel-toggle').addEventListener('click', () => {
-  document.getElementById('panel').classList.add('hidden');
-});
-document.getElementById('panel-open').addEventListener('click', () => {
-  document.getElementById('panel').classList.remove('hidden');
-});
+const panelEl = document.getElementById('panel');
+document.getElementById('panel-toggle').addEventListener('click', () => panelEl.classList.add('hidden'));
+document.getElementById('panel-open').addEventListener('click',   () => panelEl.classList.remove('hidden'));
+document.getElementById('panel-btn-mob').addEventListener('click', () => panelEl.classList.toggle('hidden'));
 
 const magSlider = document.getElementById('mag-min');
 const magVal    = document.getElementById('mag-val');
