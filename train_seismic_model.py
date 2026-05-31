@@ -89,7 +89,7 @@ def download_catalog(years: int = 2) -> pd.DataFrame:
     if Path(CACHE_FILE).exists():
         print(f"  Loading cached catalog: {CACHE_FILE}")
         df = pd.read_csv(CACHE_FILE)
-        df["time"] = pd.to_datetime(df["time"], utc=True)
+        df["time"] = pd.to_datetime(df["time"], format='ISO8601', utc=True)
         cached_end = df["time"].max()
         # Download only newer data
         if (end_date - cached_end.replace(tzinfo=None)).days < 2:
