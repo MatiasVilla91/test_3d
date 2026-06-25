@@ -51,16 +51,21 @@ CACHE_FILE     = "usgs_cache.csv"
 OUTPUT_FILE    = "seismic_predictions.json"
 
 FEATURE_NAMES = [
-    "n_eq_30d",       # Earthquake count last 30 days
-    "max_mag",        # Maximum magnitude
-    "mean_mag",       # Mean magnitude
-    "b_value",        # Gutenberg-Richter b-value (Aki MLE)
-    "mean_depth_km",  # Mean focal depth
-    "days_since_last",# Days since most recent event
-    "log_energy",     # Log10 of cumulative seismic energy
-    "rate_trend",     # Late/early rate ratio (acceleration)
-    "n_eq_90d",       # Background count last 90 days
-    "omori_rate",     # ETAS Omori contribution from M≥4 events
+    "n_eq_30d",           # Earthquake count last 30 days
+    "max_mag",            # Maximum magnitude
+    "mean_mag",           # Mean magnitude
+    "b_value",            # Gutenberg-Richter b-value (Aki MLE)
+    "mean_depth_km",      # Mean focal depth
+    "days_since_last",    # Days since most recent event
+    "log_energy",         # Log10 of cumulative seismic energy (30d window)
+    "rate_trend",         # Late/early rate ratio (acceleration)
+    "n_eq_90d",           # Background count last 90 days
+    "omori_rate",         # ETAS Omori contribution from M≥4 events
+    "quiescence_ratio",   # Recent vs historical seismicity rate ratio (< 0.1 = seismic silence)
+    "seismic_gap",        # Days since last M≥4.0 event in cell
+    "neighbor_activity",  # Sum of n_recent in 8 adjacent cells (Moore neighborhood)
+    "log_energy_total",   # Log10 of total 2yr cumulative seismic energy
+    "quiescence_trend",   # Change in quiescence_ratio: current 30d minus prior 30-60d window
 ]
 
 
@@ -148,19 +153,60 @@ def omori_rate(quakes_df, ref_time: datetime) -> float:
     return min(total, 50.0)
 
 
-def compute_features(cell_df: pd.DataFrame, ref_time: datetime) -> list:
+def compute_features(cell_df: pd.DataFrame, ref_time: datetime,
+                     full_df: pd.DataFrame = None, lat_bin: int = None, lng_bin: int = None) -> list:
     win30_start = ref_time - timedelta(days=LOOKBACK_DAYS)
+    win60_start = ref_time - timedelta(days=60)
     win90_start = ref_time - timedelta(days=90)
+    hist_start  = ref_time - timedelta(days=365 * TRAIN_YEARS)
 
     ref_time_utc = pd.Timestamp(ref_time).tz_localize("UTC")
     win30_utc    = pd.Timestamp(win30_start).tz_localize("UTC")
+    win60_utc    = pd.Timestamp(win60_start).tz_localize("UTC")
     win90_utc    = pd.Timestamp(win90_start).tz_localize("UTC")
+    hist_utc     = pd.Timestamp(hist_start).tz_localize("UTC")
 
-    recent = cell_df[(cell_df["time"] >= win30_utc) & (cell_df["time"] < ref_time_utc)]
-    bg90   = cell_df[(cell_df["time"] >= win90_utc)  & (cell_df["time"] < ref_time_utc)]
+    recent     = cell_df[(cell_df["time"] >= win30_utc) & (cell_df["time"] < ref_time_utc)]
+    prev30     = cell_df[(cell_df["time"] >= win60_utc) & (cell_df["time"] < win30_utc)]
+    bg90       = cell_df[(cell_df["time"] >= win90_utc) & (cell_df["time"] < ref_time_utc)]
+    historical = cell_df[(cell_df["time"] >= hist_utc)  & (cell_df["time"] < ref_time_utc)]
+
+    # ── New features (computed for all cells regardless of recent activity) ─────
+    rate_historical    = len(historical) / (365 * TRAIN_YEARS)
+    rate_recent        = len(recent)  / LOOKBACK_DAYS
+    rate_prev30        = len(prev30)  / LOOKBACK_DAYS
+    quiescence_ratio   = float(np.clip(rate_recent / (rate_historical + 1e-6), 0, 100))
+    quiescence_ratio_p = rate_prev30 / (rate_historical + 1e-6)
+    quiescence_trend   = float(np.clip(quiescence_ratio - quiescence_ratio_p, -100, 100))
+
+    large_evts = cell_df[(cell_df["mag"] >= 4.0) & (cell_df["time"] < ref_time_utc)]
+    seismic_gap = float(
+        (ref_time_utc - large_evts["time"].max()).total_seconds() / 86400
+        if len(large_evts) > 0 else 9999.0
+    )
+
+    hist_mags      = historical["mag"].values
+    energy_total   = sum(10 ** (1.5 * m + 4.8) for m in hist_mags) if len(hist_mags) > 0 else 0
+    log_energy_total = float(math.log10(energy_total + 1))
+
+    neighbor_activity = 0.0
+    if full_df is not None and lat_bin is not None and lng_bin is not None:
+        for dlat in [-1, 0, 1]:
+            for dlng in [-1, 0, 1]:
+                if dlat == 0 and dlng == 0:
+                    continue
+                nbr = full_df[
+                    (full_df["lat_bin"] == lat_bin + GRID_DEG * dlat) &
+                    (full_df["lng_bin"] == lng_bin + GRID_DEG * dlng) &
+                    (full_df["time"] >= win30_utc) &
+                    (full_df["time"] < ref_time_utc)
+                ]
+                neighbor_activity += len(nbr)
+
+    new_feats = [quiescence_ratio, seismic_gap, neighbor_activity, log_energy_total, quiescence_trend]
 
     if len(recent) == 0:
-        return [0, 0, 0, 1.0, 30.0, 30.0, 0, 0, len(bg90), 0]
+        return [0, 0, 0, 1.0, 30.0, 30.0, 0, 0, len(bg90), 0] + new_feats
 
     mags   = recent["mag"].values
     depths = recent["depth"].fillna(10).clip(0, 700).values
@@ -175,8 +221,7 @@ def compute_features(cell_df: pd.DataFrame, ref_time: datetime) -> list:
     early = max(half, 1)
     rate_trend = late / early - 1.0
 
-    bval = b_value_mle(mags)
-
+    bval    = b_value_mle(mags)
     om_rate = omori_rate(recent, ref_time)
 
     return [
@@ -190,7 +235,7 @@ def compute_features(cell_df: pd.DataFrame, ref_time: datetime) -> list:
         float(np.clip(rate_trend, -2, 5)),
         float(len(bg90)),
         float(om_rate),
-    ]
+    ] + new_feats
 
 
 # ── Grid Assignment ────────────────────────────────────────────────────────────
@@ -221,7 +266,7 @@ def build_training_set(df: pd.DataFrame):
         cell_df_plain["time_plain"] = cell_df_plain["time"].dt.tz_localize(None)
 
         for sample_date in dates:
-            features = compute_features(cell_df, sample_date)
+            features = compute_features(cell_df, sample_date, full_df=df, lat_bin=lat_bin, lng_bin=lng_bin)
 
             future_start = pd.Timestamp(sample_date).tz_localize("UTC")
             future_end   = future_start + timedelta(days=TARGET_DAYS)
@@ -293,7 +338,7 @@ def export_predictions(df: pd.DataFrame, model=None, auc: float = None):
     for cell_id, cell_df in df.groupby("cell"):
         lat_bin, lng_bin = map(int, cell_id.split("_"))
 
-        features = compute_features(cell_df, now)
+        features = compute_features(cell_df, now, full_df=df, lat_bin=lat_bin, lng_bin=lng_bin)
 
         if model is not None:
             X = np.array(features, dtype=np.float32).reshape(1, -1)
@@ -308,12 +353,17 @@ def export_predictions(df: pd.DataFrame, model=None, auc: float = None):
             continue
 
         predictions.append({
-            "lat":     lat_bin + GRID_DEG / 2,
-            "lng":     lng_bin + GRID_DEG / 2,
-            "risk":    round(risk, 4),
-            "n_recent": count,
-            "max_mag":  round(features[1], 1),
-            "b_value":  round(features[3], 2),
+            "lat":               lat_bin + GRID_DEG / 2,
+            "lng":               lng_bin + GRID_DEG / 2,
+            "risk":              round(risk, 4),
+            "n_recent":          count,
+            "max_mag":           round(features[1], 1),
+            "b_value":           round(features[3], 2),
+            "quiescence_ratio":  round(features[10], 3),
+            "seismic_gap":       round(features[11], 1),
+            "neighbor_activity": int(features[12]),
+            "log_energy_total":  round(features[13], 2),
+            "quiescence_trend":  round(features[14], 3),
         })
 
     predictions.sort(key=lambda p: -p["risk"])

@@ -31,7 +31,7 @@ Abre `http://localhost:8080` en el navegador. No requiere instalación de depend
 ```
 proyecto-planeta/
 ├── index.html                  # Estructura HTML: HUD, panel de control, leyendas
-├── planeta.js                  # Lógica principal Three.js (módulo ES)
+├── planeta.js                  # Lógica principal CesiumJS (módulo ES)
 ├── style.css                   # Estética radar de nave espacial
 ├── earth.jpg                   # Textura del planeta
 ├── train_seismic_model.py      # Pipeline Python: descarga → entrena XGBoost → exporta predicciones
@@ -114,10 +114,15 @@ Al re-ejecutar el script, reutiliza el caché y solo descarga datos nuevos. Se r
 | `b_value` | Estimador MLE de Aki (1965) |
 | `mean_depth_km` | Profundidad focal media |
 | `days_since_last` | Días desde el último evento |
-| `log_energy` | Log₁₀ de la energía sísmica acumulada |
+| `log_energy` | Log₁₀ de la energía sísmica acumulada (ventana 30d) |
 | `rate_trend` | Razón tasa reciente / tasa anterior (aceleración) |
 | `n_eq_90d` | Conteo de fondo 90 días |
 | `omori_rate` | Contribución Omori de eventos M≥4 |
+| `quiescence_ratio` | Tasa reciente (30d) / tasa histórica (2 años); ratio < 0.1 indica silencio sísmico — posible acumulación de estrés |
+| `seismic_gap` | Días transcurridos desde el último sismo M≥4.0 en la celda; gaps largos en zonas activas = mayor riesgo |
+| `neighbor_activity` | Suma de sismos recientes (30d) en las 8 celdas adyacentes (vecindad de Moore); actividad alta con celda central silente puede indicar migración de estrés |
+| `log_energy_total` | Log₁₀ de la energía sísmica acumulada en los 2 años completos del dataset; proxy de capacidad sismogénica de la zona |
+| `quiescence_trend` | Cambio en `quiescence_ratio`: ventana actual (0–30d) menos ventana previa (30–60d); caída brusca indica que el silencio se está profundizando |
 
 **Target:** `P(M≥5.0 en los próximos 7 días)` (clasificación binaria)
 
@@ -137,7 +142,12 @@ Al re-ejecutar el script, reutiliza el caché y solo descarga datos nuevos. Se r
       "risk": 0.74,
       "n_recent": 38,
       "max_mag": 5.8,
-      "b_value": 0.87
+      "b_value": 0.87,
+      "quiescence_ratio": 0.43,
+      "seismic_gap": 12.3,
+      "neighbor_activity": 124,
+      "log_energy_total": 14.72,
+      "quiescence_trend": -0.31
     }
   ]
 }
@@ -163,66 +173,41 @@ El browser detecta automáticamente si el archivo existe. Si no existe, usa el m
 
 ---
 
-## Arquitectura Three.js
+## Arquitectura CesiumJS
 
-### Jerarquía de la escena
+### Setup del viewer
 
-```
-scene
-├── AmbientLight
-├── DirectionalLight (sol)
-├── atmosphere (SphereGeometry r=3.18, verde semitransparente)
-├── stars (Points, 1800 puntos)
-├── ring × 3 (Line, anillos orbitales a r=4.4, 6.2, 8.5)
-└── planet (Mesh, r=3, escala (1, 0.96, 1), rotación.z = 23.5°)
-    ├── graticule × N (Line, hijos del planeta → rotan con él)
-    │   └── ecuador (color distinto, opacidad 0.55)
-    ├── markers[] (SphereGeometry × sismo, escalan con zoom)
-    ├── windArrows[] (ArrowHelper × punto de grilla)
-    └── riskMeshes[] (CircleGeometry × celda de riesgo)
-```
-
-Todos los hijos del planeta rotan automáticamente con `planet.rotation.y += 0.0015` por frame.
-
-### Conversión de coordenadas geográficas a 3D
+CesiumJS maneja el globo, la cámara y el sistema de coordenadas geográficas de forma nativa. El viewer se inicializa con terreno elipsoidal y tiles de ArcGIS MapServer:
 
 ```javascript
-function latLngAVec3(lat, lng, r = RADIO + 0.06) {
-  const phi   = (90 - lat) * (Math.PI / 180);  // colatitud
-  const theta = (lng + 180) * (Math.PI / 180); // azimut
-  return new THREE.Vector3(
-    -r * Math.sin(phi) * Math.cos(theta),
-     r * Math.cos(phi),
-     r * Math.sin(phi) * Math.sin(theta)
-  );
-}
+const viewer = new Cesium.Viewer('cesiumContainer', {
+  terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+  ...
+});
+
+Cesium.ArcGisMapServerImageryProvider.fromUrl(...);
 ```
 
-El signo negativo en X compensa la orientación de Three.js para que el mapa quede alineado geográficamente correctamente.
+### Posicionado de entidades
 
-### Orientación de flechas de viento
+CesiumJS trabaja directamente en coordenadas geográficas — no requiere conversión manual a coordenadas 3D. Los sismos, flechas de viento y celdas de riesgo se posicionan con `Cesium.Cartesian3.fromDegrees(lng, lat, altitud)`.
 
-Los vectores de viento se proyectan sobre el plano tangente de la esfera en cada punto. Los vectores tangentes Norte y Este en coordenadas locales son:
+### Graticule (grilla geográfica)
 
-```
-N = (cos φ · cos θ,  sin φ,  -cos φ · sin θ)
-E = (sin θ,           0,      cos θ)
-```
-
-La dirección meteorológica indica "desde dónde sopla" → se convierte a "hacia dónde va" sumando 180°:
+La grilla de meridianos y paralelos se dibuja como `polyline` primitivas. El ecuador se distingue con color y opacidad diferenciados:
 
 ```javascript
-const toRad = ((direction + 180) % 360) * Math.PI / 180;
-const dir = N.scale(cos(toRad)).add(E.scale(sin(toRad))).normalize();
+Cesium.Color.fromCssColorString('#00ffaa').withAlpha(0.55)  // ecuador
+Cesium.Color.fromCssColorString('#00ff44').withAlpha(0.15)  // resto
 ```
 
-### Orientación de celdas de riesgo
+### Flechas de viento
 
-Cada celda es un `CircleGeometry` que debe quedar tangente a la superficie esférica. Se rota para que su normal local apunte radialmente hacia afuera:
+Los vectores de Open-Meteo (velocidad + dirección) se renderizan como `polylineArrow` sobre el globo. La dirección meteorológica (desde dónde sopla) se convierte a dirección de movimiento sumando 180° antes de proyectar.
 
-```javascript
-mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
-```
+### Celdas de riesgo sísmico
+
+Cada celda 5°×5° se representa como una primitiva sobre la superficie del elipsoide, coloreada según la probabilidad calculada por el modelo ETAS o XGBoost.
 
 ---
 
